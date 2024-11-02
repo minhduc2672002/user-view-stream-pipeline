@@ -1,0 +1,6 @@
+# pyspark==3.5.1
+venv-pack
+pyyaml
+ua-parser
+user-agents
+psycopg2-binary
