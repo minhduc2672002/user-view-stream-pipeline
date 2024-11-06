@@ -9,7 +9,6 @@ from util.config import Config
 from util.logger import Log4j
 from postgres.operations import PostgresOperate
 
-from create_dimension import create_dim_date,create_dim_location,create_dim_product
 from batch_prcessing import process_batch
 
 
@@ -68,19 +67,6 @@ if __name__ == "__main__":
     .getOrCreate()
 
     log = Log4j(spark)
-
-    #Create database
-    db_ops.create_db()
-
-    #Create dimension table
-    df_dim_date = create_dim_date(spark)
-    df_dim_location = create_dim_location(spark,"/data/country.csv")
-    df_dim_porduct = create_dim_product(spark,"/data/dim_product.csv")
-
-    db_ops.save_to_postgres(df_dim_date,"dim_date")
-    db_ops.save_to_postgres(df_dim_location,"dim_location")
-    db_ops.save_to_postgres(df_dim_porduct,"dim_product")
-
 
     #Read Kafka Stream
     df = spark.readStream \

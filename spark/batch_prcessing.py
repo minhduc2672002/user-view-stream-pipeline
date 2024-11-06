@@ -65,6 +65,8 @@ def process_batch(df: DataFrame,db_ops):
     .withColumn("product_id",handle_null_product_id) \
     .withColumnRenamed("product_id","product_key")
 
+    df_behavior_genkey = df_behavior_genkey.cache()
+
     gen_fact_key = md5(
             concat(
                 coalesce(col("date_key").cast("string"), lit("")),

@@ -4,7 +4,6 @@ from pyspark.sql import DataFrame
 class PostgresOperate:
     def __init__(self, postgres_conf):
         self.postgres_conf = postgres_conf
-
     def get_connection(self):
         try:
             connection = psycopg2.connect(
@@ -45,17 +44,27 @@ class PostgresOperate:
             .mode("append") \
             .save()
 
-    def upsert_to_table(self, partition, insert_query, columns):
+    def upsert_to_table(self, partition, insert_query, columns,batch_size=100):
         try:
             conn = self.get_connection()
             cursor = conn.cursor()
+            batch = []
+
             for row in partition:
                 try:
                     values = [getattr(row, col) for col in columns]
-                    cursor.execute(insert_query, values)
+                    batch.append(values)
+
+                    if len(batch) >= batch_size:
+                        cursor.executemany(insert_query, batch)
+                        conn.commit()
+                        batch.clear()  # Xóa batch sau khi insert
+                    # cursor.execute(insert_query, values)
                 except Exception as e:
                     print(f"Error inserting row {row}: {e}")
-            conn.commit()
+            if batch:
+                cursor.executemany(insert_query, batch)
+                conn.commit()
         except Exception as e:
             print(f"Error in partition: {e}")
         finally:

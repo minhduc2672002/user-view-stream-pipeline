@@ -1,7 +1,9 @@
 from pyspark.sql.types import StringType, StructType, StructField,IntegerType
 from pyspark.sql.functions import *
 from pyspark.sql import SparkSession
-
+from util.config import Config
+from util.logger import Log4j
+from postgres.operations import PostgresOperate
 
 def create_dim_date(spark: SparkSession):    
     # Tạo DataFrame có dãy ngày từ 01-10-2024 đến 10-10-2024
@@ -80,3 +82,41 @@ def create_dim_product(spark:SparkSession, product_path:str):
     df_product_final = df_product.selectExpr("id AS product_key","name AS product_name")
 
     return df_product_final
+
+
+if __name__ == "__main__":
+    
+    conf = Config()
+    spark_conf = conf.spark_conf
+    kaka_conf = conf.kafka_conf
+    
+    
+    postgres_conf =conf.postgres_conf
+    db_ops = PostgresOperate(postgres_conf)
+
+
+    KAFKA_PATH_CHECKPOINT = "/data/data_behavior/kafka_checkpoint/"
+
+    spark = SparkSession.builder \
+    .config(conf=spark_conf) \
+    .config("spark.jars.packages","org.postgresql:postgresql:42.7.3") \
+    .getOrCreate()
+
+    log = Log4j(spark)
+
+    #Create database
+    db_ops.create_db()
+
+    #Create dimension table
+    df_dim_date = create_dim_date(spark)
+    df_dim_location = create_dim_location(spark,"/data/country.csv")
+    df_dim_porduct = create_dim_product(spark,"/data/dim_product.csv")
+
+    db_ops.save_to_postgres(df_dim_date,"dim_date")
+    db_ops.save_to_postgres(df_dim_location,"dim_location")
+    db_ops.save_to_postgres(df_dim_porduct,"dim_product")
+
+
+    print("Stop Create Dimension")
+    spark.stop()
+
