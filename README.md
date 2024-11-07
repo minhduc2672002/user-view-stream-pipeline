@@ -1,31 +1,32 @@
-# Yêu cầu dự án
+# Project requirements
 
 ## Overview
 
-Bài toán kết hợp việc sử dụng `kafka` và `spark`. Sử dụng `spark` đọc dữ liệu từ `kafka` sau đó xử lý, tính toán và lưu
-trữ vào db `postgres`
+The problem combines the use of `kafka` and `spark`. Use `spark` to read data from `kafka` then process, calculate and save
+stored in database `postgres`
 
-## Bài toán
+## Problem
 
-**Đầu vào:**
+**Input:**
 
-- Kafka: Cụm `Kafka` setup ở dưới local và `topic` chứa dữ liệu về hành vi người dùng trên website đã làm trong project
-  của module `Kafka`
-- Spark: Cụm `Spark` cài đặt dưới local trong khóa học
-- Schema của dữ liệu
+- Kafka: The Kafka cluster is set up locally, and the topic contains data on user behavior on the website, which was implemented in the Kafka module of the project.
+- Spark: The Spark cluster is installed locally as part of the course.
+- Data schema
+- The data stored on Kafka
+  ![image](https://github.com/user-attachments/assets/b0e13ff8-85ff-4e62-8286-c7e9801f4b22)
 
-**Đầu ra:**
+  
+**Output:**
 
-- Thiết kế db
-- Chương trình code xử lý yêu cầu của dự án
-- Kết quả của các báo cáo theo yêu cầu
-- Dữ liệu được lưu trong database `Postgres`
+- Database design
+- Program code to handle project requirements
+- Results of the reports as requested
+- Data stored in the Postgres database
+## Describe
 
-## Mô tả
+**Data schema:**
 
-**Schema của dữ liệu đầu vào:**
-
-| Tên          | Kiểu dữ liệu  | Mô tả                                                   | Ví dụ                                                                                                                                                               |
+| Name          | Data type  | Describe                                                   | example                                                                                                                                                               |
 |--------------|---------------|---------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | id           | String        | Log id                                                  | aea4b823-c5c6-485e-8b3b-6182a7c4ecce                                                                                                                                |
 | api_version  | String        | Version của api                                         | 1.0                                                                                                                                                                 | 
@@ -42,22 +43,39 @@ trữ vào db `postgres`
 | time_stamp   | Long          | Timestamp thời điểm bản ghi log được tạo                |                                                                                                                                                                     |
 | user_agent   | String        | Thông tin của browser, thiết bị                         | Mozilla/5.0 (iPhone; CPU iPhone OS 13_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1 Mobile/15E148 Safari/604.1                           |
 
-**Yêu cầu:**
+**Requirement:**
 
-Thiết kế db và viết chương trình đưa ra các báo cáo như sau:
+Design the database and write the program to generate the following reports:
 
-- Top 10 `product_id` có lượt view cao nhất trong ngày hiện tại
-- Top 10 quốc gia có lượt view cao nhất trong ngày hiện tại (quốc gia được lấy dựa vào `domain`)
-- Top 5 `referrer_url` có lượt view cao nhất trong ngày hiện tại
-- Với 1 quốc gia bất kỳ, lấy ra danh sách các `store_id` và lượt view tương ứng, sắp xếp theo lượt view
-  giảm dần
-- Dữ liệu view phân bổ theo giờ của một `product_id` bất kỳ trong ngày
-- Dữ liệu view theo giờ của từng `browser`, `os`
+- Top 10 product_id with the highest views on the current day or the most recent day
+- Top 10 countries with the highest views on the current day or the most recent day (countries are identified based on domain)
+- Top 5 referrer_url with the highest views on the current day or the most recent day
+- For any given country, retrieve the list of store_id and their corresponding view counts, sorted in descending order by views
+- View data distribution by hour for a specific product_id on the current day
+- View data by hour for each browser and os
 
-=>> Các dimension phải tạo là product,coutrny,url,store,date(ở mức giờ),user_agent
-## Phụ lục
+## Data warehouse design
+![image](https://github.com/user-attachments/assets/7c744826-0048-445e-8c83-d1a95297fe9f)
 
-**Cách chạy chương trình sử dụng thư viện ngoài thông qua virtual env**
+## Analysis
+- Top 10 product_id with the highest views on the current day or the most recent day
+  ![image](https://github.com/user-attachments/assets/b3c72c4c-0cb0-4320-885d-a5c5b587122c)
+- Top 10 countries with the highest views on the current day or the most recent day (countries are identified based on domain)
+![image](https://github.com/user-attachments/assets/baf4fdef-c842-4f12-b313-dda91a733221)
+- Top 5 referrer_url with the highest views on the current day or the most recent day
+![image](https://github.com/user-attachments/assets/871050cf-a05b-4f8b-b084-d194856e5f6c)
+- For any given country, retrieve the list of store_id and their corresponding view counts, sorted in descending order by views
+![image](https://github.com/user-attachments/assets/5475ccec-f602-4763-a96b-3e63b90c613e)
+- View data by hour for each browser
+
+  ![image](https://github.com/user-attachments/assets/a2b4fc07-c473-4287-9ec1-b9d661278e0c)
+- View data by hour for each os
+
+  ![image](https://github.com/user-attachments/assets/1bb7fef7-fbbb-4394-b4dd-90e5b5f32fc2)
+  
+## Run command line
+
+**Run a program using external libraries through a virtual environment**
 
 ```
 docker container stop product-view-create-dimension || true &&
@@ -102,7 +120,7 @@ spark-submit \
 /spark/main_streaming.py"
 ```
 
-## Link tham khảo
+## Reference links
 
 [Python Package Management](https://spark.apache.org/docs/latest/api/python/user_guide/python_packaging.html)
 
