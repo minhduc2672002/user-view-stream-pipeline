@@ -61,13 +61,12 @@ Design the database and write the program to generate the following reports:
 - Top 10 product_id with the highest views on the current day or the most recent day
   ![image](https://github.com/user-attachments/assets/b3c72c4c-0cb0-4320-885d-a5c5b587122c)
 - Top 10 countries with the highest views on the current day or the most recent day (countries are identified based on domain)
-
-  
   ![image](https://github.com/user-attachments/assets/baf4fdef-c842-4f12-b313-dda91a733221)
 - Top 5 referrer_url with the highest views on the current day or the most recent day
-![image](https://github.com/user-attachments/assets/871050cf-a05b-4f8b-b084-d194856e5f6c)
+  ![image](https://github.com/user-attachments/assets/871050cf-a05b-4f8b-b084-d194856e5f6c)
 - For any given country, retrieve the list of store_id and their corresponding view counts, sorted in descending order by views
-![image](https://github.com/user-attachments/assets/5475ccec-f602-4763-a96b-3e63b90c613e)
+
+  ![image](https://github.com/user-attachments/assets/5475ccec-f602-4763-a96b-3e63b90c613e)
 - View data by hour for each browser
 
   ![image](https://github.com/user-attachments/assets/a2b4fc07-c473-4287-9ec1-b9d661278e0c)
