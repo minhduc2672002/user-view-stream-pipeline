@@ -104,9 +104,6 @@ if __name__ == "__main__":
 
     log = Log4j(spark)
 
-    #Create database
-    db_ops.create_db()
-
     #Create dimension table
     df_dim_date = create_dim_date(spark)
     df_dim_location = create_dim_location(spark,"/data/country.csv")

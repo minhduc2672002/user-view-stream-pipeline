@@ -60,6 +60,27 @@ Thiết kế db và viết chương trình đưa ra các báo cáo như sau:
 **Cách chạy chương trình sử dụng thư viện ngoài thông qua virtual env**
 
 ```
+docker container stop product-view-create-dimension || true &&
+docker container rm product-view-create-dimension || true &&
+docker run -ti --name product-view-create-dimension \
+--network=streaming-network \
+-p 4042:4040 \
+-v ./:/spark \
+-v spark_lib:/opt/bitnami/spark/.ivy2 \
+-v spark_data:/data \
+-e PYSPARK_DRIVER_PYTHON='python' \
+-e PYSPARK_PYTHON='./environment/bin/python' \
+unigap/spark:3.5 bash -c "python -m venv pyspark_venv &&
+source pyspark_venv/bin/activate &&
+pip install -r /spark/requirements.txt &&
+venv-pack -o pyspark_venv.tar.gz &&
+spark-submit \
+--packages org.postgresql:postgresql:42.7.3 \
+--archives pyspark_venv.tar.gz#environment \
+--py-files /spark/postgres.zip \
+/spark/create_dimension.py"
+
+
 docker container stop product-view-stream || true &&
 docker container rm product-view-stream || true &&
 docker run -ti --name product-view-stream \
@@ -77,6 +98,7 @@ venv-pack -o pyspark_venv.tar.gz &&
 spark-submit \
 --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,org.postgresql:postgresql:42.7.3 \
 --archives pyspark_venv.tar.gz#environment \
+--py-files /spark/postgres.zip \
 /spark/main_streaming.py"
 ```
 

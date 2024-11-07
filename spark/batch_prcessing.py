@@ -5,6 +5,7 @@ from user_agents import parse
 def process_batch(df: DataFrame,db_ops):
     #EXTRACT DOMAIN FROM URL
     df_behavior = df
+    
     extract_current_domain = split(col("current_url"),"/")[2]
     extract_reference_domain = split(col("referrer_url"),"/")[2]
     num_parts = size(split(extract_current_domain, r"\."))
@@ -17,9 +18,12 @@ def process_batch(df: DataFrame,db_ops):
     extract_coutnry_code = upper(split(extract_current_domain,r"\.")[num_parts -1])
     fix_country_code =  expr("""CASE
                                     WHEN country_code = 'COM' THEN 'US'
+                                    WHEN country_code = 'CLOUD' THEN 'US'
                                     WHEN country_code = 'AFRICA'  THEN 'BF'
                                     WHEN country_code = 'MEDIA' THEN 'LY'
                                     WHEN country_code = 'STORE' THEN 'CU'
+                                    WHEN country_code = 'UK' THEN 'GB'
+                                    WHEN country_code = 'RS' THEN 'CS'
                                     WHEN country_code = '' THEN 'Undefined'
                                     ELSE country_code
                                 END AS country_code
@@ -65,7 +69,7 @@ def process_batch(df: DataFrame,db_ops):
     .withColumn("product_id",handle_null_product_id) \
     .withColumnRenamed("product_id","product_key")
 
-    df_behavior_genkey = df_behavior_genkey.cache()
+    df_behavior_genkey = df_behavior_genkey.persist()
 
     gen_fact_key = md5(
             concat(
@@ -111,9 +115,10 @@ def process_batch(df: DataFrame,db_ops):
                 "is_self_reference") \
     .distinct()
 
-
-
     db_ops.upsert_to_fact_view(fact_view)
     db_ops.upsert_to_dim_browser(df_dim_browser)
     db_ops.upsert_to_dim_os(df_dim_os)
     db_ops.upsert_to_dim_reference(df_dim_refer)
+
+
+    df_behavior_genkey.unpersist()

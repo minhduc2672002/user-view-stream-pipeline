@@ -51,7 +51,7 @@ Thiết kế db và viết chương trình đưa ra các báo cáo như sau:
 - Top 5 `referrer_url` có lượt view cao nhất trong ngày hiện tại
 - Với 1 quốc gia bất kỳ, lấy ra danh sách các `store_id` và lượt view tương ứng, sắp xếp theo lượt view
   giảm dần
-- Dữ liệu view phân bổ theo giờ của một `product_id` bất kỳ trong ngày
+- Dữ liệu view phân bổ theo giờ của một `product_id` bất kỳ trong ngày gần nhất
 - Dữ liệu view theo giờ của từng `browser`, `os`
 
 =>> Các dimension phải tạo là product,coutrny,url,store,date(ở mức giờ),user_agent
