@@ -194,4 +194,8 @@ build/
 *.conf
 *.cfg
 
+#data in minio
 minio-data/
+
+#Logs
+logs

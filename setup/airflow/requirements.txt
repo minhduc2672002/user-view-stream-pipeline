@@ -1,0 +1,4 @@
+apache-airflow-providers-google==10.3.0
+dbt-core==1.7.8
+dbt-bigquery==1.7.6
+dbt-postgres==1.7.8
