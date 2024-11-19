@@ -1,0 +1,167 @@
+from airflow import DAG
+from datetime import datetime
+from airflow.operators.python import PythonOperator
+from airflow.operators.bash import BashOperator
+from airflow.operators.empty import EmptyOperator
+from airflow.utils.task_group import TaskGroup
+from airflow.operators.email import EmailOperator
+from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
+
+from airflow.hooks.base import BaseHook
+from airflow.configuration import conf
+
+import os
+import sys
+
+script_dir = os.path.join(os.path.dirname(__file__), 'src/kafka/')
+
+def print_hello():
+    smtp_mail_from = conf.get('smtp', 'smtp_mail_from')  # Thay đổi để lấy thông tin cần thiết
+
+    # In địa chỉ email vào log
+    print(f'Sending email from: {smtp_mail_from}')
+
+
+def print_hello_2(str):
+    print(f"{str}")
+
+
+def my_task_function(**kwargs):
+    print("Running my task!")
+    raise ValueError("Simulated error!")  # Mô phỏng lỗi
+
+def send_retry_email(context):
+    email_task = EmailOperator(
+        task_id='send_retry_email',
+        to='recipient@example.com',
+        subject='Airflow Alert: Task Retrying',
+        html_content=f"""<h3>Task Retrying Alert</h3>
+                         <p>Task <strong>{context['task_instance'].task_id}</strong> is retrying.</p>
+                         <p>Current attempt: {context['task_instance'].try_number}</p>""",
+    )
+    email_task.execute(context=context)
+default_args = {
+    'owner': 'airflow',
+    'start_date': datetime(2024, 11, 17),
+    }
+
+with DAG('test_spark2',
+         default_args = default_args,
+         schedule_interval= None,
+         catchup=False
+        ) as dag:
+    # task1 = PythonOperator(
+    # task_id='task_1',
+    # python_callable = print_hello
+    # )
+
+    # task2 = PythonOperator(
+    # task_id='task_2',
+    # python_callable = print_hello_2,
+    # op_kwargs={'str':'hello minh duc!'}
+    # )
+
+    # sources = TaskGroup('sources')
+    # with TaskGroup("data_processing", tooltip="Các task xử lý dữ liệu",parent_group=None) as data_processing:
+        
+    #     task3 = EmptyOperator(task_id='task3')
+    #     task4 = EmptyOperator(task_id='task4')
+    #     task5 = EmptyOperator(task_id='task5')
+        
+        
+    # with TaskGroup("data_stored", tooltip="Các task xử lý dữ liệu",parent_group=None) as data_stored:
+    
+    #     task3 = EmptyOperator(task_id='task3')
+    #     task4 = EmptyOperator(task_id='task4')
+    #     task5 = EmptyOperator(task_id='task5')
+
+    # email_failure = EmailOperator(
+    #     task_id='send_email_on_succes',
+    #     to='minhduc2672002@gmail.com',
+    #     subject='Airflow Alert: Pipeline Success',
+    #     html_content="""<h3>Task Failure Alert</h3>
+    #                     <p>Task <strong>{{ task.task_id }}</strong> in DAG <strong>{{ dag.dag_id }}</strong> has failed.</p>
+    #                     <p>Please check the Airflow UI for more details.</p>""",
+    # )
+    create_env = BashOperator(
+        task_id = "create_env",
+        bash_command="""
+        VENV_DIR="pyspark_venv"
+        VENV_ARCHIVE="pyspark_venv.tar.gz"
+        WORK_DIR="/opt/airflow/dags/workspace"  # Đặt thư mục làm việc bạn muốn
+
+        # Chuyển đến thư mục làm việc mong muốn
+        cd $WORK_DIR
+
+        if [ -f "$VENV_ARCHIVE" ]; then
+            echo "Tệp tarball '$VENV_ARCHIVE' đã tồn tại. Bỏ qua việc tạo mới."
+        else
+            # Kiểm tra xem virtual environment đã tồn tại chưa
+            if [ -d "$VENV_DIR" ]; then
+                echo "Virtual environment '$VENV_DIR' đã tồn tại. Bỏ qua tạo mới."
+            else
+                echo "Virtual environment '$VENV_DIR' không tồn tại. Tạo mới..."
+
+                # Tạo virtualenv, cài đặt yêu cầu, và đóng gói lại
+                python -m venv $VENV_DIR &&
+                source $VENV_DIR/bin/activate &&
+                pip install -r spark/requirements.txt &&
+                venv-pack -o $VENV_ARCHIVE
+
+                echo "Virtual environment được tạo tại đường dẫn:"
+                echo "$(pwd)/$VENV_DIR"
+            fi
+        fi
+        """
+    )
+
+    # spark_create_dimension = SparkSubmitOperator(
+    #     task_id="spark_create_dimension",
+    #     conn_id="spark-conn",
+    #     application="dags/workspace/spark/create_dimension.py",
+    #     packages="org.postgresql:postgresql:42.7.3",
+    #     py_files="dags/workspace/spark/postgres.zip"
+    # )
+
+    spark_stream = SparkSubmitOperator(
+        task_id="spark_stream",
+        conn_id="spark-conn",
+        application="dags/workspace/spark/main_streaming.py",
+        packages="org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,org.postgresql:postgresql:42.7.3",
+        archives="/opt/airflow/dags/workspace/pyspark_venv.tar.gz#environment",
+        py_files="/opt/airflow/dags/workspace/spark/postgres.zip"
+    )
+    
+    delete_env = BashOperator(
+        task_id = "delete_env",
+        bash_command="""
+        VENV_DIR="pyspark_venv"
+        VENV_ARCHIVE="pyspark_venv.tar.gz"
+        WORK_DIR="/opt/airflow/dags/workspace"  # Đặt thư mục làm việc bạn muốn
+
+        # Chuyển đến thư mục làm việc mong muốn
+        cd $WORK_DIR
+
+        # Kiểm tra nếu tệp tarball tồn tại và xóa nếu có
+        if [ -f "$VENV_ARCHIVE" ]; then
+            echo "Tệp tarball '$VENV_ARCHIVE' đã tồn tại. Đang xóa..."
+            rm -f "$VENV_ARCHIVE"
+            echo "Đã xóa tệp tarball '$VENV_ARCHIVE'."
+        else
+            echo "Tệp tarball '$VENV_ARCHIVE' không tồn tại."
+        fi
+
+        # Kiểm tra nếu thư mục virtual environment tồn tại và xóa nếu có
+        if [ -d "$VENV_DIR" ]; then
+            echo "Virtual environment '$VENV_DIR' đã tồn tại. Đang xóa..."
+            rm -rf "$VENV_DIR"
+            echo "Đã xóa virtual environment '$VENV_DIR'."
+        else
+            echo "Virtual environment '$VENV_DIR' không tồn tại."
+        fi
+        """
+    )
+            
+create_env  >> spark_stream >> delete_env
+    
+    
