@@ -88,14 +88,10 @@ if __name__ == "__main__":
     
     conf = Config()
     spark_conf = conf.spark_conf
-    kaka_conf = conf.kafka_conf
-    
     
     postgres_conf =conf.postgres_conf
     db_ops = PostgresOperate(postgres_conf)
 
-
-    KAFKA_PATH_CHECKPOINT = "/data/data_behavior/kafka_checkpoint/"
 
     spark = SparkSession.builder \
     .config(conf=spark_conf) \
@@ -105,15 +101,19 @@ if __name__ == "__main__":
     log = Log4j(spark)
 
     #Create dimension table
-    df_dim_date = create_dim_date(spark)
-    df_dim_location = create_dim_location(spark,"/data/country.csv")
-    df_dim_porduct = create_dim_product(spark,"/data/dim_product.csv")
+    try:
+        df_dim_date = create_dim_date(spark)
+        df_dim_location = create_dim_location(spark,"/data/country.csv")
+        df_dim_porduct = create_dim_product(spark,"/data/dim_product.csv")
 
-    db_ops.save_to_postgres(df_dim_date,"dim_date")
-    db_ops.save_to_postgres(df_dim_location,"dim_location")
-    db_ops.save_to_postgres(df_dim_porduct,"dim_product")
+        db_ops.save_to_postgres(df_dim_date,"dim_date")
+        db_ops.save_to_postgres(df_dim_location,"dim_location")
+        db_ops.save_to_postgres(df_dim_porduct,"dim_product")
+    except Exception as e:
+        print(e)
+    finally:
+        print("Stop Create Dimension")
+        spark.stop()
 
-
-    print("Stop Create Dimension")
-    spark.stop()
+    
 

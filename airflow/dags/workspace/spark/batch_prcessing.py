@@ -1,6 +1,7 @@
 from pyspark.sql.types import StringType, StructType, StructField,IntegerType
 from pyspark.sql.functions import *
 from user_agents import parse
+import os
 
 def extract_domain(df: DataFrame):
     extract_current_domain = split(col("current_url"),"/")[2]
@@ -11,6 +12,23 @@ def extract_domain(df: DataFrame):
         .withColumn('reference_domain',extract_reference_domain)
     )   
 
+def extract_country_code(df : DataFrame):
+    num_parts = size(split(col("current_domain"), r"\."))
+    extract_coutnry_code = upper(split(col("current_domain"),r"\.")[num_parts -1])
+    fix_country_code =  expr("""CASE
+                                    WHEN country_code = 'COM' THEN 'US'
+                                    WHEN country_code = 'AFRICA'  THEN 'BF'
+                                    WHEN country_code = 'MEDIA' THEN 'LY'
+                                    WHEN country_code = 'STORE' THEN 'CU'
+                                    WHEN country_code = '' THEN 'Undefined'
+                                    ELSE country_code
+                                END AS country_code
+                            """)
+
+    return (
+        df.withColumn('country_code',extract_coutnry_code)
+        .withColumn('country_code',fix_country_code)
+    )
 
 def handle_refernce(df : DataFrame):
     handle_refernce_null = expr("IFNULL(reference_domain,'Undefined') AS reference_domain")
@@ -113,7 +131,8 @@ def handle_dim_reference(df : DataFrame):
 def process_batch(df: DataFrame,db_ops):
     #EXTRACT DOMAIN FROM URL
     df_behavior_extract_domain = extract_domain(df)
-    df_handle_refernce = handle_refernce(df_behavior_extract_domain)
+    df_extract_country_code = extract_country_code(df_behavior_extract_domain)
+    df_handle_refernce = handle_refernce(df_extract_country_code)
     df_extract_browser = extract_browser(df_handle_refernce)
     df_extract_os = extract_os(df_extract_browser)
     df_handle_product_id = handle_product_id(df_extract_os)

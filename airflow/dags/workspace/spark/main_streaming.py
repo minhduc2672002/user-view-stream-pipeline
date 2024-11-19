@@ -10,7 +10,7 @@ from util.logger import Log4j
 from postgres.operations import PostgresOperate
 
 from batch_prcessing import process_batch
-
+import os
 
 def normalized_df(df):
     schema = StructType([
@@ -58,33 +58,37 @@ if __name__ == "__main__":
     postgres_conf =conf.postgres_conf
     db_ops = PostgresOperate(postgres_conf)
 
+    os.environ['PYSPARK_DRIVER_PYTHON'] = "python"
+    os.environ['PYSPARK_PYTHON'] = "./environment/bin/python"
+    print("check_path", os.getcwd())
 
-    KAFKA_PATH_CHECKPOINT = "/data/data_behavior/kafka_checkpoint/"
+    KAFKA_PATH_CHECKPOINT = "./spark/kafka_checkpoint"
+    try:
+        spark = SparkSession.builder \
+        .config(conf=spark_conf) \
+        .config("spark.jars.packages","org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,org.postgresql:postgresql:42.7.3") \
+        .getOrCreate()
 
-    spark = SparkSession.builder \
-    .config(conf=spark_conf) \
-    .config("spark.jars.packages","org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,org.postgresql:postgresql:42.7.3") \
-    .getOrCreate()
+        log = Log4j(spark)
 
-    log = Log4j(spark)
+        #Read Kafka Stream
+        df = spark.readStream \
+        .format("kafka") \
+        .option("auto.offset.reset", "earliest") \
+        .option("startingOffsets","earliest") \
+        .options(**kaka_conf) \
+        .load()
 
-    #Read Kafka Stream
-    df = spark.readStream \
-    .format("kafka") \
-    .option("auto.offset.reset", "earliest") \
-    .option("startingOffsets","earliest") \
-    .options(**kaka_conf) \
-    .load()
-
-    #Transform and Load to Postgres
-    load = df.transform(lambda df: normalized_df(df)) \
-    .writeStream \
-    .outputMode("append") \
-    .foreachBatch(lambda batch_df, batch_id: process_batch(batch_df,db_ops)) \
-    .option("checkpointLocation", KAFKA_PATH_CHECKPOINT) \
-    .start() \
-    .awaitTermination()
-
-
-    print("Stop TestExternalPythonLib")
-    spark.stop()
+        #Transform and Load to Postgres
+        load = df.transform(lambda df: normalized_df(df)) \
+        .writeStream \
+        .outputMode("append") \
+        .foreachBatch(lambda batch_df, batch_id: process_batch(batch_df,db_ops)) \
+        .option("checkpointLocation", KAFKA_PATH_CHECKPOINT) \
+        .start() \
+        .awaitTermination()
+    except Exception as e:
+        print(e)
+    finally:
+        print("Stop TestExternalPythonLib")
+        spark.stop()
