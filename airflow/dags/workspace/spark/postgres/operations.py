@@ -33,7 +33,7 @@ class PostgresOperate:
             cursor.close()
             conn.close()
 
-    def save_to_postgres(self, df: DataFrame, dbtable: str):
+    def save_to_postgres(self, df: DataFrame, dbtable: str, mode : str = "overwrite"):
         df.write \
             .format("jdbc") \
             .option("driver", "org.postgresql.Driver") \
@@ -41,7 +41,7 @@ class PostgresOperate:
             .option("dbtable", dbtable) \
             .option("user", self.postgres_conf['user']) \
             .option("password", self.postgres_conf['password']) \
-            .mode("append") \
+            .mode(mode) \
             .save()
 
     def upsert_to_table(self, partition, insert_query, columns,batch_size=100):
@@ -71,6 +71,9 @@ class PostgresOperate:
             if 'conn' in locals() and conn:
                 cursor.close()
                 conn.close()
+
+
+
 
     def upsert_to_dim_browser(self, df_browser: DataFrame):
         columns = ["browser_key", "browser_name"]

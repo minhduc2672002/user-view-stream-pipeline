@@ -11,7 +11,7 @@ x-airflow-common:
     &airflow-common-env
     TZ: 'Asia/Ho_Chi_Minh'
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres-airflow/airflow
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
@@ -29,16 +29,17 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    - spark_data:/data
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
-    postgres:
+    postgres-airflow:
       condition: service_healthy
   networks:
     - streaming-network
 
 services:
-  postgres:
+  postgres-airflow:
     image: postgres:16.3
     environment:
       TZ: 'Asia/Ho_Chi_Minh'
@@ -177,3 +178,5 @@ networks:
 
 volumes:
   postgres-db-volume:
+  spark_data:
+    external: true

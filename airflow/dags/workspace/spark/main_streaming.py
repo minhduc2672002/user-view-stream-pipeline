@@ -58,8 +58,8 @@ if __name__ == "__main__":
     postgres_conf =conf.postgres_conf
     db_ops = PostgresOperate(postgres_conf)
 
-    os.environ['PYSPARK_DRIVER_PYTHON'] = "python"
-    os.environ['PYSPARK_PYTHON'] = "./environment/bin/python"
+    # os.environ['PYSPARK_DRIVER_PYTHON'] = "python"
+    # os.environ['PYSPARK_PYTHON'] = "./environment/bin/python"
     print("check_path", os.getcwd())
 
     KAFKA_PATH_CHECKPOINT = "./spark/kafka_checkpoint"
@@ -76,6 +76,7 @@ if __name__ == "__main__":
         .format("kafka") \
         .option("auto.offset.reset", "earliest") \
         .option("startingOffsets","earliest") \
+        .option("maxOffsetsPerTrigger", "100") \
         .options(**kaka_conf) \
         .load()
 
@@ -83,12 +84,12 @@ if __name__ == "__main__":
         load = df.transform(lambda df: normalized_df(df)) \
         .writeStream \
         .outputMode("append") \
-        .foreachBatch(lambda batch_df, batch_id: process_batch(batch_df,db_ops)) \
+        .foreachBatch(lambda batch_df, batch_id: process_batch(batch_df,batch_id,db_ops)) \
         .option("checkpointLocation", KAFKA_PATH_CHECKPOINT) \
         .start() \
         .awaitTermination()
     except Exception as e:
-        print(e)
+        raise
     finally:
-        print("Stop TestExternalPythonLib")
+        print("Stop Streaming")
         spark.stop()

@@ -106,7 +106,11 @@ def handle_fact_view(df : DataFrame):
             .agg(expr("count(*) AS total_view"))
             .withColumn("key",gen_fact_key)
      )
+
+
 def handle_dim_browser(df : DataFrame):
+
+
     return (
         df.selectExpr("browser_key",
                 "browser AS browser_name")
@@ -128,9 +132,68 @@ def handle_dim_reference(df : DataFrame):
             .distinct()
     )
 
-def process_batch(df: DataFrame,db_ops):
-    #EXTRACT DOMAIN FROM URL
-    df_behavior_extract_domain = extract_domain(df)
+def data_check(df: DataFrame):
+    email_regex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+    ipv4_regex = r"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+    url_regex = "^(http[s]?:\\/\\/)?([a-zA-Z0-9\\-]+\\.)+[a-zA-Z]{2,6}(\\/[^\\s]*)?$"
+    df_check = (df
+            .withColumn("is_valid_email",
+                        when(col("email_address").rlike(email_regex), True)
+                        .when(col("email_address").rlike(""), True)
+                        .when(col("email_address").isNull(), True)
+                        .otherwise(False))
+            .withColumn("is_valid_product",
+                        when(col("product_id").isNull(),False)
+                        .otherwise(True))
+            .withColumn("is_valid_local_time",
+                        when(col("local_time").isNull(),False)
+                        .otherwise(True))
+            .withColumn("is_valid_ip",
+                        when(col("ip").rlike(ipv4_regex), True)
+                        .otherwise(False))
+            .withColumn("is_valid_url",
+                        when(col("current_url").rlike(url_regex), True)
+                        .otherwise(False))
+        )
+
+    true_data = (
+        df_check
+        .filter(
+            (col("is_valid_email") == True) & 
+            (col("is_valid_product") == True) & 
+            (col("is_valid_ip") == True) & 
+            (col("is_valid_url") == True) & 
+            (col("is_valid_local_time") == True))
+    )
+
+    false_data =(
+        df_check
+        .filter(
+            (col("is_valid_email") == False) |
+            (col("is_valid_product") == False) |
+            (col("is_valid_ip") == False) | 
+            (col("is_valid_url") == False) |
+            (col("is_valid_local_time") == False)
+        )
+    )
+
+    return true_data,false_data
+
+
+def process_raw_data(df_error : DataFrame,batch_id: int):
+    return (
+            df_error.withColumn("option", to_json(col("option")))
+            .withColumn("batch_id",lit(batch_id))
+            .withColumn("insert_dt",current_timestamp())
+        )
+
+
+def process_batch(df_product_view: DataFrame,batch_id: int,db_ops):
+    
+    df_product_view_correct,df_product_view_incorrect = data_check(df_product_view)
+
+
+    df_behavior_extract_domain = extract_domain(df_product_view_correct)
     df_extract_country_code = extract_country_code(df_behavior_extract_domain)
     df_handle_refernce = handle_refernce(df_extract_country_code)
     df_extract_browser = extract_browser(df_handle_refernce)
@@ -144,7 +207,13 @@ def process_batch(df: DataFrame,db_ops):
     df_dim_browser = handle_dim_browser(df_generate_key_cache)
     df_dim_os = handle_dim_os(df_generate_key_cache)
     df_dim_refer = handle_dim_reference(df_generate_key_cache)
-   
+
+    df_product_view_raw = process_raw_data(df_product_view_correct,batch_id)
+    df_product_view_error_raw = process_raw_data(df_product_view_incorrect,batch_id)
+
+    db_ops.save_to_postgres(df_product_view_raw,"product_view",mode="append")
+    db_ops.save_to_postgres(df_product_view_error_raw,"product_view_error",mode="append")
+
     db_ops.upsert_to_fact_view(df_fact_view)
     db_ops.upsert_to_dim_browser(df_dim_browser)
     db_ops.upsert_to_dim_os(df_dim_os)
