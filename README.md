@@ -82,7 +82,7 @@ Design the database and write the program to generate the following reports:
 ## Visualization
 ![image](https://github.com/user-attachments/assets/eb5abfba-64a9-4dd2-8b8a-09f12eaac5e5)
 
-## Run command line
+## Run command line with docker (don't use airflow)
 
 **Run a program using external libraries through a virtual environment**
 
