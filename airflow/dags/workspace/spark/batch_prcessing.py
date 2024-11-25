@@ -192,7 +192,6 @@ def process_batch(df_product_view: DataFrame,batch_id: int,db_ops):
     
     df_product_view_correct,df_product_view_incorrect = data_check(df_product_view)
 
-
     df_behavior_extract_domain = extract_domain(df_product_view_correct)
     df_extract_country_code = extract_country_code(df_behavior_extract_domain)
     df_handle_refernce = handle_refernce(df_extract_country_code)
@@ -218,3 +217,5 @@ def process_batch(df_product_view: DataFrame,batch_id: int,db_ops):
     db_ops.upsert_to_dim_browser(df_dim_browser)
     db_ops.upsert_to_dim_os(df_dim_os)
     db_ops.upsert_to_dim_reference(df_dim_refer)
+
+    df_generate_key_cache.unpersist()

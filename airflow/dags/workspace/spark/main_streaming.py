@@ -58,8 +58,7 @@ if __name__ == "__main__":
     postgres_conf =conf.postgres_conf
     db_ops = PostgresOperate(postgres_conf)
 
-    # os.environ['PYSPARK_DRIVER_PYTHON'] = "python"
-    # os.environ['PYSPARK_PYTHON'] = "./environment/bin/python"
+
     print("check_path", os.getcwd())
 
     KAFKA_PATH_CHECKPOINT = "./spark/kafka_checkpoint"

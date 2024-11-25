@@ -45,7 +45,7 @@ if __name__ == "__main__":
     #Create dimension table
     try:
         df_dim_date = create_dim_date(spark)
-        db_ops.save_to_postgres(df_dim_date,"dim_date",mode="append")
+        db_ops.save_to_postgres(df_dim_date,"dim_date")
     except Exception as e:
         raise
     finally:

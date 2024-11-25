@@ -85,6 +85,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+    ports:
+      - "4046:4040"
     # restart: always
     depends_on:
       <<: *airflow-common-depends-on

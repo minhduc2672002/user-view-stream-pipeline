@@ -65,7 +65,7 @@ if __name__ == "__main__":
     #Create dimension table
     try:
         df_dim_location = create_dim_location(spark,"/data/country.csv")
-        db_ops.save_to_postgres(df_dim_location,"dim_location",mode="append")
+        db_ops.save_to_postgres(df_dim_location,"dim_location")
     except Exception as e:
         raise
     finally:
