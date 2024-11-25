@@ -57,6 +57,10 @@ Design the database and write the program to generate the following reports:
 ## Data warehouse design
 ![image](https://github.com/user-attachments/assets/7c744826-0048-445e-8c83-d1a95297fe9f)
 
+## Data Pipeline
+![image](https://github.com/user-attachments/assets/629ce1da-d6e0-40dd-b13d-a5fffce2a04d)
+
+
 ## Analysis
 - Top 10 product_id with the highest views on the current day or the most recent day
   ![image](https://github.com/user-attachments/assets/b3c72c4c-0cb0-4320-885d-a5c5b587122c)
@@ -75,7 +79,9 @@ Design the database and write the program to generate the following reports:
 - View data by hour for each os
 
   ![image](https://github.com/user-attachments/assets/1bb7fef7-fbbb-4394-b4dd-90e5b5f32fc2)
-  
+## Visualization
+![image](https://github.com/user-attachments/assets/eb5abfba-64a9-4dd2-8b8a-09f12eaac5e5)
+
 ## Run command line
 
 **Run a program using external libraries through a virtual environment**
