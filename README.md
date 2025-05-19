@@ -1,136 +1,143 @@
-# Project requirements
+# Project: Real-Time Web User Behavior Analysis with Kafka, Spark, and PostgreSQL
 
 ## Overview
 
-The problem combines the use of `kafka` and `spark`. Use `spark` to read data from `kafka` then process, calculate and save
-stored in database `postgres`
+This project demonstrates how to build a real-time data processing pipeline using Apache Kafka and Apache Spark. Data is ingested from a Kafka topic, processed using Spark, and the final results are stored in a PostgreSQL database for further analysis and reporting.
 
-## Problem
+## Problem Statement
 
-**Input:**
+### Input
 
-- Kafka: The Kafka cluster is set up locally, and the topic contains data on user behavior on the website, which was implemented in the Kafka module of the project.
-- Spark: The Spark cluster is installed locally as part of the course.
-- Data schema
-- The data stored on Kafka
-  ![image](https://github.com/user-attachments/assets/b0e13ff8-85ff-4e62-8286-c7e9801f4b22)
+- **Kafka**: A locally deployed Kafka cluster where a topic contains user behavior logs from a website.
+- **Spark**: A local Spark cluster used for real-time stream processing.
+- **Data Format**: Structured JSON messages sent to Kafka (schema detailed below).
 
-  
-**Output:**
+### Output
 
-- Database design
-- Program code to handle project requirements
-- Results of the reports as requested
-- Data stored in the Postgres database
-## Describe
+- PostgreSQL data warehouse populated with processed analytics data.
+- Program code to generate reports.
+- Visualization of insights based on user interaction data.
 
-**Data schema:**
+## Data Schema
 
-| Name          | Data type  | Describe                                                   | example                                                                                                                                                               |
-|--------------|---------------|---------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| id           | String        | Log id                                                  | aea4b823-c5c6-485e-8b3b-6182a7c4ecce                                                                                                                                |
-| api_version  | String        | Version của api                                         | 1.0                                                                                                                                                                 | 
-| collection   | String        | Loại log                                                | view_product_detail                                                                                                                                                 | 
-| current_url  | String        | Url của trang web mà người dùng đang vào                | https://www.glamira.cl/glamira-anillo-saphira-skug100335.html?alloy=white-375&diamond=sapphire&stone2=diamond-Brillant&itm_source=recommendation&itm_medium=sorting |
-| device_id    | String        | id của thiết bị                                         | 874db849-68a6-4e99-bcac-fb6334d0ec80                                                                                                                                |
-| email        | String        | Email của người dùng                                    |                                                                                                                                                                     |
-| ip           | String        | Địa chỉ ip                                              | 190.163.166.122                                                                                                                                                     |
-| local_time   | String        | Thời gian log được tạo. Format dạng yyyy-MM-dd HH:mm:ss | 2024-05-28 08:31:22                                                                                                                                                 |
-| option       | Array<Object> | Danh sách các option của sản phẩm                       | `[{"option_id": "328026", "option_label": "diamond"}]`                                                                                                              |
-| product_id   | String        | Mã id của sản phẩm                                      | 96672                                                                                                                                                               |
-| referrer_url | String        | Đường dẫn web dẫn đến link `current_url`                | https://www.google.com/                                                                                                                                             |
-| store_id     | String        | Mã id của cửa hàng                                      | 85                                                                                                                                                                  |
-| time_stamp   | Long          | Timestamp thời điểm bản ghi log được tạo                |                                                                                                                                                                     |
-| user_agent   | String        | Thông tin của browser, thiết bị                         | Mozilla/5.0 (iPhone; CPU iPhone OS 13_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1 Mobile/15E148 Safari/604.1                           |
+| Field         | Type          | Description                                                | Example                                                                 |
+|---------------|---------------|------------------------------------------------------------|-------------------------------------------------------------------------|
+| `id`          | String        | Unique log identifier                                      | `aea4b823-c5c6-485e-8b3b-6182a7c4ecce`                                 |
+| `api_version` | String        | API version                                                | `1.0`                                                                   |
+| `collection`  | String        | Type of event/log                                          | `view_product_detail`                                                  |
+| `current_url` | String        | URL visited by the user                                   | `https://www.glamira.cl/...`                                           |
+| `device_id`   | String        | Device identifier                                          | `874db849-68a6-4e99-bcac-fb6334d0ec80`                                 |
+| `email`       | String        | User email (if available)                                 |                                                                         |
+| `ip`          | String        | IP address of the user                                    | `190.163.166.122`                                                      |
+| `local_time`  | String        | Local time of event (yyyy-MM-dd HH:mm:ss)                 | `2024-05-28 08:31:22`                                                  |
+| `option`      | Array<Object> | List of product options                                   | `[{"option_id": "328026", "option_label": "diamond"}]`                |
+| `product_id`  | String        | Product identifier                                         | `96672`                                                                |
+| `referrer_url`| String        | URL of the referring page                                 | `https://www.google.com/`                                              |
+| `store_id`    | String        | Store identifier                                           | `85`                                                                   |
+| `time_stamp`  | Long          | Event timestamp (epoch)                                   |                                                                         |
+| `user_agent`  | String        | User browser/device information                           | `Mozilla/5.0 (iPhone; CPU iPhone OS 13_4_1...)`                        |
 
-**Requirement:**
+## Requirements
 
-Design the database and write the program to generate the following reports:
+Design and implement a data pipeline and reporting logic to generate the following analytics:
 
-- Top 10 product_id with the highest views on the current day or the most recent day
-- Top 10 countries with the highest views on the current day or the most recent day (countries are identified based on domain)
-- Top 5 referrer_url with the highest views on the current day or the most recent day
-- For any given country, retrieve the list of store_id and their corresponding view counts, sorted in descending order by views
-- View data distribution by hour for a specific product_id on the current day
-- View data by hour for each browser and os
+- **Top 10** most viewed `product_id` on the current or latest day.
+- **Top 10** countries by view count (derived from domain of `current_url`).
+- **Top 5** `referrer_url` by views on the current or latest day.
+- View count by `store_id` for a specific country, sorted by views.
+- Hourly distribution of views for a specific `product_id`.
+- Hourly view statistics by browser and operating system.
 
-## Data warehouse design
-![image](https://github.com/user-attachments/assets/7c744826-0048-445e-8c83-d1a95297fe9f)
+## Data Warehouse Design
 
-## Data Pipeline
-![image](https://github.com/user-attachments/assets/629ce1da-d6e0-40dd-b13d-a5fffce2a04d)
+![Data Warehouse Design](https://github.com/user-attachments/assets/7c744826-0048-445e-8c83-d1a95297fe9f)
 
+## Data Pipeline Architecture
 
-## Analysis
-- Top 10 product_id with the highest views on the current day or the most recent day
-  ![image](https://github.com/user-attachments/assets/b3c72c4c-0cb0-4320-885d-a5c5b587122c)
-- Top 10 countries with the highest views on the current day or the most recent day (countries are identified based on domain)
+![Data Pipeline](https://github.com/user-attachments/assets/629ce1da-d6e0-40dd-b13d-a5fffce2a04d)
 
+## Reporting & Analysis
 
-  ![image](https://github.com/user-attachments/assets/baf4fdef-c842-4f12-b313-dda91a733221)
-- Top 5 referrer_url with the highest views on the current day or the most recent day
-  ![image](https://github.com/user-attachments/assets/871050cf-a05b-4f8b-b084-d194856e5f6c)
-- For any given country, retrieve the list of store_id and their corresponding view counts, sorted in descending order by views
+- **Top 10 Most Viewed Products**
 
-  ![image](https://github.com/user-attachments/assets/5475ccec-f602-4763-a96b-3e63b90c613e)
-- View data by hour for each browser
+  ![Top Products](https://github.com/user-attachments/assets/b3c72c4c-0cb0-4320-885d-a5c5b587122c)
 
-  ![image](https://github.com/user-attachments/assets/a2b4fc07-c473-4287-9ec1-b9d661278e0c)
-- View data by hour for each os
+- **Top 10 Countries by Views**
 
-  ![image](https://github.com/user-attachments/assets/1bb7fef7-fbbb-4394-b4dd-90e5b5f32fc2)
+  ![Top Countries](https://github.com/user-attachments/assets/baf4fdef-c842-4f12-b313-dda91a733221)
+
+- **Top 5 Referrer URLs**
+
+  ![Top Referrer URLs](https://github.com/user-attachments/assets/871050cf-a05b-4f8b-b084-d194856e5f6c)
+
+- **Store Views by Country**
+
+  ![Store Views](https://github.com/user-attachments/assets/5475ccec-f602-4763-a96b-3e63b90c613e)
+
+- **Hourly Product Views**
+
+  ![Hourly Views](https://github.com/user-attachments/assets/a2b4fc07-c473-4287-9ec1-b9d661278e0c)
+
+- **Hourly Views by OS**
+
+  ![Hourly OS Views](https://github.com/user-attachments/assets/1bb7fef7-fbbb-4394-b4dd-90e5b5f32fc2)
+
 ## Visualization
-![image](https://github.com/user-attachments/assets/eb5abfba-64a9-4dd2-8b8a-09f12eaac5e5)
 
-## Run command line with docker (don't use airflow)
+![Dashboard](https://github.com/user-attachments/assets/eb5abfba-64a9-4dd2-8b8a-09f12eaac5e5)
 
-**Run a program using external libraries through a virtual environment**
+## Running the Pipeline with Docker (No Airflow)
 
-```
+### Step 1: Create Dimension Tables
+
+```bash
 docker container stop product-view-create-dimension || true &&
 docker container rm product-view-create-dimension || true &&
 docker run -ti --name product-view-create-dimension \
---network=streaming-network \
--p 4042:4040 \
--v ./:/spark \
--v spark_lib:/opt/bitnami/spark/.ivy2 \
--v spark_data:/data \
--e PYSPARK_DRIVER_PYTHON='python' \
--e PYSPARK_PYTHON='./environment/bin/python' \
-unigap/spark:3.5 bash -c "python -m venv pyspark_venv &&
-source pyspark_venv/bin/activate &&
-pip install -r /spark/requirements.txt &&
-venv-pack -o pyspark_venv.tar.gz &&
-spark-submit \
---packages org.postgresql:postgresql:42.7.3 \
---archives pyspark_venv.tar.gz#environment \
---py-files /spark/postgres.zip \
-/spark/create_dimension.py"
+  --network=streaming-network \
+  -p 4042:4040 \
+  -v ./:/spark \
+  -v spark_lib:/opt/bitnami/spark/.ivy2 \
+  -v spark_data:/data \
+  -e PYSPARK_DRIVER_PYTHON='python' \
+  -e PYSPARK_PYTHON='./environment/bin/python' \
+  unigap/spark:3.5 bash -c "
+    python -m venv pyspark_venv &&
+    source pyspark_venv/bin/activate &&
+    pip install -r /spark/requirements.txt &&
+    venv-pack -o pyspark_venv.tar.gz &&
+    spark-submit \
+      --packages org.postgresql:postgresql:42.7.3 \
+      --archives pyspark_venv.tar.gz#environment \
+      --py-files /spark/postgres.zip \
+      /spark/create_dimension.py"
+```
 
-
+### Step 2: Start Streaming Job
+```bash
 docker container stop product-view-stream || true &&
 docker container rm product-view-stream || true &&
 docker run -ti --name product-view-stream \
---network=streaming-network \
--p 4042:4040 \
--v ./:/spark \
--v spark_lib:/opt/bitnami/spark/.ivy2 \
--v spark_data:/data \
--e PYSPARK_DRIVER_PYTHON='python' \
--e PYSPARK_PYTHON='./environment/bin/python' \
-unigap/spark:3.5 bash -c "python -m venv pyspark_venv &&
-source pyspark_venv/bin/activate &&
-pip install -r /spark/requirements.txt &&
-venv-pack -o pyspark_venv.tar.gz &&
-spark-submit \
---packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,org.postgresql:postgresql:42.7.3 \
---archives pyspark_venv.tar.gz#environment \
---py-files /spark/postgres.zip \
-/spark/main_streaming.py"
+  --network=streaming-network \
+  -p 4042:4040 \
+  -v ./:/spark \
+  -v spark_lib:/opt/bitnami/spark/.ivy2 \
+  -v spark_data:/data \
+  -e PYSPARK_DRIVER_PYTHON='python' \
+  -e PYSPARK_PYTHON='./environment/bin/python' \
+  unigap/spark:3.5 bash -c "
+    python -m venv pyspark_venv &&
+    source pyspark_venv/bin/activate &&
+    pip install -r /spark/requirements.txt &&
+    venv-pack -o pyspark_venv.tar.gz &&
+    spark-submit \
+      --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,org.postgresql:postgresql:42.7.3 \
+      --archives pyspark_venv.tar.gz#environment \
+      --py-files /spark/postgres.zip \
+      /spark/main_streaming.py"
 ```
 
-## Reference links
+## References
 
-[Python Package Management](https://spark.apache.org/docs/latest/api/python/user_guide/python_packaging.html)
-
-[JDBC To Other Databases](https://spark.apache.org/docs/latest/sql-data-sources-jdbc.html)
+- [PySpark Packaging Guide](https://spark.apache.org/docs/latest/api/python/user_guide/python_packaging.html)
+- [JDBC Data Sources](https://spark.apache.org/docs/latest/sql-data-sou)
